@@ -20,7 +20,8 @@ namespace LegacyRenewalApp
                 new BasicTermDiscount(),
                 new LargeTeamDiscount(),
                 new MediumTeamDiscount(),
-                new SmallTeamDiscount()
+                new SmallTeamDiscount(),
+                new LoyaltyPointsDiscount()
             }))
         {
         }
