@@ -16,6 +16,8 @@ namespace LegacyRenewalApp
                 new GoldDiscount(),
                 new PlatinumDiscount(),
                 new EducationDiscount(),
+                new LongTermDiscount(),
+                new BasicTermDiscount()
             }))
         {
         }
