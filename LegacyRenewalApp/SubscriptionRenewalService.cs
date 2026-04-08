@@ -6,11 +6,12 @@ namespace LegacyRenewalApp
     public class SubscriptionRenewalService
     {
         private readonly IBillingGateway _billingGateway;
-        private readonly DiscountCalculator _discountCalculator;
-
+        private readonly InvoiceCalculator _invoiceCalculator;
+        private readonly CustomerRepository _customerRepository;
+        private readonly SubscriptionPlanRepository _subscriptionPlanRepository;
         public SubscriptionRenewalService() : this(
             new NewBillingGateway(),
-            new DiscountCalculator(new List<IDiscountStrategy> 
+            new InvoiceCalculator(new List<IDiscountStrategy> 
             {
                 new SilverDiscount(),
                 new GoldDiscount(),
@@ -22,15 +23,19 @@ namespace LegacyRenewalApp
                 new MediumTeamDiscount(),
                 new SmallTeamDiscount(),
                 new LoyaltyPointsDiscount()
-            }))
-        {
-        }
+            }),
+            new CustomerRepository(),
+            new SubscriptionPlanRepository()) {}
         public SubscriptionRenewalService(
             IBillingGateway billingGateway,
-            DiscountCalculator discountCalculator)
+            InvoiceCalculator invoiceCalculator,
+            CustomerRepository customerRepository,
+            SubscriptionPlanRepository subscriptionPlanRepository)
         {
             _billingGateway = billingGateway;
-            _discountCalculator = discountCalculator;
+            _invoiceCalculator = invoiceCalculator;
+            _customerRepository = customerRepository;
+            _subscriptionPlanRepository = subscriptionPlanRepository;
         }
         public RenewalInvoice CreateRenewalInvoice(
             int customerId,
@@ -45,21 +50,18 @@ namespace LegacyRenewalApp
             string normalizedPlanCode = planCode.Trim().ToUpperInvariant();
             string normalizedPaymentMethod = paymentMethod.Trim().ToUpperInvariant();
 
-            var customerRepository = new CustomerRepository();
-            var planRepository = new SubscriptionPlanRepository();
-
-            var customer = customerRepository.GetById(customerId);
-            var plan = planRepository.GetByCode(normalizedPlanCode);
+            var customer = _customerRepository.GetById(customerId);
+            var plan = _subscriptionPlanRepository.GetByCode(normalizedPlanCode);
 
             if (!customer.IsActive)
             {
                 throw new InvalidOperationException("Inactive customers cannot renew subscriptions");
             }
 
-            var discount = _discountCalculator.Calculate(customer, plan, normalizedPlanCode, normalizedPaymentMethod,
+            var result = _invoiceCalculator.Calculate(customer, plan, normalizedPlanCode, normalizedPaymentMethod,
                 seatCount, includePremiumSupport, useLoyaltyPoints);
 
-            var invoice = CreateInvoice(customer, discount, normalizedPlanCode, normalizedPaymentMethod, seatCount);
+            var invoice = CreateInvoice(customer, result, normalizedPlanCode, normalizedPaymentMethod, seatCount);
 
             _billingGateway.SaveInvoice(invoice);
             SendMessage(customer, invoice,normalizedPlanCode);
@@ -85,7 +87,7 @@ namespace LegacyRenewalApp
         }
         private RenewalInvoice CreateInvoice(
             Customer customer, 
-            DiscountCalculatorResult result, 
+            InvoiceCalculatorResult result, 
             string normalizedPlanCode, 
             string normalizedPaymentMethod, 
             int seatCount)
@@ -103,7 +105,7 @@ namespace LegacyRenewalApp
                 PaymentFee = Math.Round(result.PaymentFee, 2, MidpointRounding.AwayFromZero),
                 TaxAmount = Math.Round(result.TaxAmount, 2, MidpointRounding.AwayFromZero),
                 FinalAmount = Math.Round(result.FinalAmount, 2, MidpointRounding.AwayFromZero),
-                Notes = result.Notes,
+                Notes = result.Notes.Trim(),
                 GeneratedAt = DateTime.UtcNow
             };
         }

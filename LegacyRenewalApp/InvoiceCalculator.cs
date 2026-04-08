@@ -3,16 +3,16 @@ using System.Collections.Generic;
 
 namespace LegacyRenewalApp;
 
-public class DiscountCalculator
+public class InvoiceCalculator
 {
     private readonly IEnumerable<IDiscountStrategy> _discountStrategy;
 
-    public DiscountCalculator(IEnumerable<IDiscountStrategy> discountStrategy)
+    public InvoiceCalculator(IEnumerable<IDiscountStrategy> discountStrategy)
     {
         _discountStrategy = discountStrategy;
     }
 
-    public DiscountCalculatorResult Calculate(
+    public InvoiceCalculatorResult Calculate(
         Customer customer,
         SubscriptionPlan subscriptionPlan,
         string normalizedPlanCode,
@@ -21,7 +21,7 @@ public class DiscountCalculator
         bool inculdePremiumSupport,
         bool useLoyalityPoints)
     {
-        var result = new DiscountCalculatorResult();
+        var result = new InvoiceCalculatorResult();
         var notes = string.Empty;
         result.BaseAmount = (subscriptionPlan.MonthlyPricePerSeat * seatCount * 12m) + subscriptionPlan.SetupFee;
 

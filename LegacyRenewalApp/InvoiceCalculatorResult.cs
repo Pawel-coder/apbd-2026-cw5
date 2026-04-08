@@ -1,6 +1,6 @@
 namespace LegacyRenewalApp;
 
-public class DiscountCalculatorResult
+public class InvoiceCalculatorResult
 {
     public decimal BaseAmount { get; set; }
     public decimal DiscountAmount { get; set; }
