@@ -2,5 +2,5 @@
 
 public interface IDiscountStrategy
 {
-    decimal CalculateDiscount(decimal orderAmount);
+    DiscountResult CalculateDiscount(Customer customer, SubscriptionPlan plan, int seatCount, decimal baseAmount, bool useLoyaltyPoints);
 }
